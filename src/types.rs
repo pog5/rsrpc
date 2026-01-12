@@ -256,20 +256,20 @@ pub struct ProcessCache {
 /// Detectable game from arRPC database
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectableGame {
-    pub id: String,
-    pub name: String,
+    pub id: std::borrow::Cow<'static, str>,
+    pub name: std::borrow::Cow<'static, str>,
     #[serde(default)]
-    pub executables: Vec<Executable>,
+    pub executables: std::borrow::Cow<'static, [Executable]>,
 }
 
 /// Executable entry in detectable database
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Executable {
-    pub name: String,
+    pub name: std::borrow::Cow<'static, str>,
     #[serde(default)]
     pub is_launcher: bool,
     #[serde(default)]
-    pub os: Option<String>,
+    pub os: Option<std::borrow::Cow<'static, str>>,
     #[serde(default)]
-    pub arguments: Option<String>,
+    pub arguments: Option<std::borrow::Cow<'static, str>>,
 }

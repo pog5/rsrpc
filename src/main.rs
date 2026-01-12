@@ -70,7 +70,7 @@ async fn shutdown_signal() {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let config = Config::from_env();
+    let config = Config::parse_args();
     setup_logging(config.debug);
     print_banner();
 

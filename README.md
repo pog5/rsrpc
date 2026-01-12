@@ -17,33 +17,43 @@
 ## 🛠️ Installation & Building
 
 ### Prerequisites
-- Rust and Cargo (latest nightly)
+- Windows or Linux
+- Rust and Cargo (for building from source)
 
-### Build from Source
+### Installation
+**Binaries**: 
+Grab the latest nightly binary from the [Releases](https://github.com/yourusername/rsrpc/releases) page. We provide builds for Windows (x64, arm64) and Linux (x64, arm64).
+
+**From Source**:
 ```bash
 git clone https://github.com/yourusername/rsrpc.git
 cd rsrpc
 cargo build --release
 ```
-The binary will be located at `target/release/rsrpc`.
 
 ## 📖 Usage
 
-Simply run the executable:
-
 ```bash
-./rsrpc
+./rsrpc [OPTIONS]
 ```
 
-### Environment Variables
+### Configuration
+rsrpc can be configured via Command Line Arguments (flags) or Environment Variables. Flags take precedence.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `RSRPC_BRIDGE_PORT` | `1337` | Port for arRPC-compatible JSON bridge |
-| `RSRPC_MSGPACK_PORT` | `1338` | Port for optimized MessagePack bridge |
-| `RSRPC_SCAN_INTERVAL` | `5000` | Process scan interval in ms |
-| `RSRPC_DEBUG` | `false` | Set to `true` for verbose logging |
-| `RSRPC_NO_PROCESS_SCANNING`| `false` | Disable the game process scanner |
+| Flag | Env Variable | Default | Description |
+|------|--------------|---------|-------------|
+| `--bridge-port <PORT>` | `RSRPC_BRIDGE_PORT` | `1337` | Port for JSON bridge |
+| `--msgpack-port <PORT>` | `RSRPC_MSGPACK_PORT` | `1338` | Port for MessagePack bridge |
+| `--enable-db-update` | `RSRPC_ENABLE_DB_UPDATE` | `false` | Enable startup DB fetch |
+| `--no-process-scanning` | `RSRPC_NO_PROCESS_SCANNING` | `false` | Disable game detection |
+| `--debug` | `RSRPC_DEBUG` | `false` | Enable verbose logging |
+
+### Database Updates
+By default, rsrpc uses a **bundled** database of games for instant startup and zero network dependency.
+To enable runtime updates (fetching the latest list from Discord):
+```bash
+./rsrpc --enable-db-update
+```
 
 ## 🔌 Integration
 

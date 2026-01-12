@@ -32,7 +32,10 @@ struct ClientState {
 impl RpcServer {
     pub fn new(config: Config) -> Self {
         let bridge = Arc::new(Bridge::new(config.clone()));
-        let process_scanner = Arc::new(ProcessScanner::new(config.db_url.clone()));
+        let process_scanner = Arc::new(ProcessScanner::new(
+            config.db_url.clone(),
+            config.enable_db_update,
+        ));
 
         Self {
             config,
@@ -47,7 +50,7 @@ impl RpcServer {
         info!("rsrpc v{} starting", env!("CARGO_PKG_VERSION"));
 
         // Initialize process scanner database
-        if self.config.process_scanning {
+        if !self.config.no_process_scanning {
             if let Err(e) = self.process_scanner.init().await {
                 warn!("Failed to initialize process scanner: {}", e);
             }
@@ -74,7 +77,7 @@ impl RpcServer {
                 .collect();
 
         // Start process scanner if enabled
-        if self.config.process_scanning {
+        if !self.config.no_process_scanning {
             let server = self.clone();
             let scan_interval = Duration::from_millis(self.config.scan_interval_ms);
             tokio::spawn(async move {

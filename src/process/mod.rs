@@ -3,6 +3,7 @@
 //! Scans running processes and matches against arRPC's detectable.json database.
 
 pub mod detectable;
+pub mod generated_db;
 
 #[cfg(windows)]
 mod windows;
@@ -25,6 +26,8 @@ pub struct ProcessScanner {
     last_db_update: RwLock<Option<Instant>>,
     /// Database URL
     db_url: String,
+    /// Enable database updates
+    enable_updates: bool,
 }
 
 /// Detected game info
@@ -37,18 +40,27 @@ pub struct DetectedGame {
 }
 
 impl ProcessScanner {
-    pub fn new(db_url: String) -> Self {
+    pub fn new(db_url: String, enable_updates: bool) -> Self {
         Self {
-            database: RwLock::new(Vec::new()),
+            database: RwLock::new(generated_db::DETECTABLE_GAMES.to_vec()),
             cache: RwLock::new(ProcessCache::default()),
             last_db_update: RwLock::new(None),
             db_url,
+            enable_updates,
         }
     }
 
-    /// Initialize database (fetch from URL)
+    /// Initialize database (fetch from URL if enabled)
     pub async fn init(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        self.update_database().await
+        if !self.enable_updates {
+            return Ok(());
+        }
+
+        // Try to update, but don't fail if network is down (we have static DB)
+        if let Err(e) = self.update_database().await {
+            tracing::warn!("Failed to update detectable database: {}", e);
+        }
+        Ok(())
     }
 
     /// Update detectable games database from URL
@@ -58,7 +70,7 @@ impl ProcessScanner {
         let response = reqwest::get(&self.db_url).await?;
         let games: Vec<DetectableGame> = response.json().await?;
 
-        info!("Loaded {} detectable games", games.len());
+        info!("Loaded {} detectable games from URL", games.len());
         *self.database.write().await = games;
         *self.last_db_update.write().await = Some(Instant::now());
 
@@ -67,10 +79,12 @@ impl ProcessScanner {
 
     /// Scan for running games
     pub async fn scan(&self) -> Vec<DetectedGame> {
-        // Refresh database periodically (every hour)
-        if let Some(last_update) = *self.last_db_update.read().await {
-            if last_update.elapsed() > Duration::from_secs(3600) {
-                let _ = self.update_database().await;
+        // Refresh database periodically (every hour) if enabled
+        if self.enable_updates {
+            if let Some(last_update) = *self.last_db_update.read().await {
+                if last_update.elapsed() > Duration::from_secs(3600) {
+                    let _ = self.update_database().await;
+                }
             }
         }
 
@@ -95,24 +109,29 @@ impl ProcessScanner {
             // Match against database
             for game in database.iter() {
                 if let Some(_) = match_executables(&game.executables, &to_compare, &process.args) {
-                    current_ids.push(game.id.clone());
+                    current_ids.push(game.id.to_string());
 
                     // Get or create timestamp
                     let start_time =
-                        *cache.timestamps.entry(game.id.clone()).or_insert_with(|| {
-                            info!("Detected game: {} with PID {}", game.name, process.pid);
-                            std::time::SystemTime::now()
-                                .duration_since(std::time::UNIX_EPOCH)
-                                .map(|d| d.as_millis() as i64)
-                                .unwrap_or(0)
-                        });
+                        *cache
+                            .timestamps
+                            .entry(game.id.to_string())
+                            .or_insert_with(|| {
+                                info!("Detected game: {} with PID {}", game.name, process.pid);
+                                std::time::SystemTime::now()
+                                    .duration_since(std::time::UNIX_EPOCH)
+                                    .map(|d| d.as_millis() as i64)
+                                    .unwrap_or(0)
+                            });
 
-                    cache.names.insert(game.id.clone(), game.name.clone());
-                    cache.pids.insert(game.id.clone(), process.pid);
+                    cache
+                        .names
+                        .insert(game.id.to_string(), game.name.to_string());
+                    cache.pids.insert(game.id.to_string(), process.pid);
 
                     detected.push(DetectedGame {
-                        id: game.id.clone(),
-                        name: game.name.clone(),
+                        id: game.id.to_string(),
+                        name: game.name.to_string(),
                         pid: process.pid,
                         start_time,
                     });
@@ -219,7 +238,7 @@ fn match_executables(
         // Check arguments if required
         if let Some(required_args) = &exe.arguments {
             if let Some(process_args) = args {
-                if !process_args.contains(required_args) {
+                if !process_args.contains(required_args.as_ref()) {
                     continue;
                 }
             } else {

@@ -8,8 +8,7 @@ use tokio::fs;
 use tracing::{debug, info, warn};
 
 #[allow(dead_code)] // used
-const DEFAULT_DB_URL: &str =
-    "https://raw.githubusercontent.com/OpenAsar/arrpc/main/src/process/detectable.json";
+const DEFAULT_DB_URL: &str = "https://discord.com/api/v9/applications/detectable";
 const CACHE_FILE: &str = "detectable_cache.json";
 
 /// Load detectable games database      

@@ -1,0 +1,82 @@
+name: Check Daily for new detectable games
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install Cross
+        run: cargo install cross
+
+      - name: Run Updater
+        run: |
+          cd tools/updater
+          cargo run --release
+          cd ../..
+          git status
+
+      - name: Check for Changes
+        id: changes
+        run: |
+          if [[ -n $(git status --porcelain resources/detectable.json) ]]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git add resources/detectable.json src/process/generated_db.rs
+            git commit -m "chore: update detectable games database [skip ci]"
+            git push
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No database changes detected."
+          fi
+
+      - name: Build Targets
+        if: steps.changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          # Define targets
+          targets=(
+            "x86_64-unknown-linux-gnu"
+            "aarch64-unknown-linux-gnu"
+            "x86_64-pc-windows-gnu"
+            "aarch64-pc-windows-msvc"
+          )
+
+          mkdir dist
+
+          for target in "${targets[@]}"; do
+            echo "Building for $target..."
+            cross build --release --target $target
+            
+            # Identify output binary
+            if [[ "$target" == *"windows"* ]]; then
+              ext=".exe"
+            else
+              ext=""
+            fi
+            
+            cp "target/$target/release/rsrpc$ext" "dist/rsrpc-$target$ext"
+          done
+
+      - name: Update Nightly Release
+        if: steps.changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Nightly Build
+          tag_name: nightly
+          files: dist/*
+          prerelease: true
+          make_latest: true
