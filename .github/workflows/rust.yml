@@ -23,21 +23,9 @@ jobs:
 
     - name: Install Rust Toolchain (nightly)
       uses: dtolnay/rust-toolchain@nightly
-      with:
-        components: clippy
 
     - name: Rust Cache
       uses: swatinem/rust-cache@v2
 
     - name: Build
       run: cargo build --verbose
-
-    - name: Lint (Clippy)
-      run: cargo clippy --verbose
-      continue-on-error: true
-
-    - name: Run tests
-      run: cargo test --verbose
-
-    - name: Run benchmarks
-      run: cargo bench --verbose

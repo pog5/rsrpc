@@ -9,10 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  updater:
+  nightly:
     runs-on: ubuntu-latest
-    outputs:
-      changed: ${{ steps.changes.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,12 +23,15 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-updater-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-nightly-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-updater-
+            ${{ runner.os }}-cargo-nightly-
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install Cross
+        run: cargo install cross
 
       - name: Run Updater
         run: |
@@ -53,129 +54,35 @@ jobs:
             echo "No database changes detected."
           fi
 
-  build-linux:
-    needs: updater
-    if: needs.updater.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-linux-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-linux-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
-      - name: Install Cross
-        run: cargo install cross
       - name: Build Targets
+        if: steps.changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           mkdir dist
-          targets=("x86_64-unknown-linux-gnu" "aarch64-unknown-linux-gnu")
+          targets=(
+            "x86_64-unknown-linux-gnu"
+            "aarch64-unknown-linux-gnu"
+            "x86_64-pc-windows-gnu"
+            "aarch64-pc-windows-gnullvm"
+            "x86_64-apple-darwin"
+            "aarch64-apple-darwin"
+          )
+          
           for target in "${targets[@]}"; do
             echo "Building for $target..."
             cross build --release --target $target
-            cp "target/$target/release/rsrpc" "dist/rsrpc-$target"
+            
+            # Determine extension
+            if [[ "$target" == *"windows"* ]]; then
+              ext=".exe"
+            else
+              ext=""
+            fi
+            
+            cp "target/$target/release/rsrpc$ext" "dist/rsrpc-$target$ext"
           done
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-artifacts
-          path: dist/*
 
-  build-windows:
-    needs: updater
-    if: needs.updater.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-windows-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-windows-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
-      - name: Build Targets
-        run: |
-          mkdir dist
-          $targets = @("x86_64-pc-windows-msvc", "aarch64-pc-windows-msvc")
-          foreach ($target in $targets) {
-            echo "Building for $target..."
-            rustup target add $target
-            cargo build --release --target $target
-            Copy-Item "target/$target/release/rsrpc.exe" "dist/rsrpc-$target.exe"
-          }
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-artifacts
-          path: dist/*
-
-  build-macos:
-    needs: updater
-    if: needs.updater.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-macos-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-macos-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
-      - name: Build Targets
-        run: |
-          mkdir dist
-          targets=("x86_64-apple-darwin" "aarch64-apple-darwin")
-          for target in "${targets[@]}"; do
-            echo "Building for $target..."
-            rustup target add $target
-            cargo build --release --target $target
-            cp "target/$target/release/rsrpc" "dist/rsrpc-$target"
-          done
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-artifacts
-          path: dist/*
-
-  release:
-    needs: [build-linux, build-windows, build-macos]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Linux Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-artifacts
-          path: dist
-      - name: Download Windows Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-artifacts
-          path: dist
-      - name: Download MacOS Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-artifacts
-          path: dist
       - name: Update Nightly Release
+        if: steps.changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           name: Nightly Build
