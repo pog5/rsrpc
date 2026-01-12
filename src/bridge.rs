@@ -167,15 +167,19 @@ impl Bridge {
                                     Protocol::MsgPack => Message::Binary(data),
                                 };
                                 if write.send(ws_msg).await.is_err() {
+                                    debug!("Failed to send activity to client");
                                     break;
+                                } else {
+                                    debug!("Sent activity to client");
                                 }
                             }
                         }
-                        Err(broadcast::error::RecvError::Lagged(_)) => {
-                            // Missed some messages, continue
+                        Err(broadcast::error::RecvError::Lagged(missed)) => {
+                            debug!("Missed {} messages", missed);
                             continue;
                         }
                         Err(broadcast::error::RecvError::Closed) => {
+                            debug!("Activity broadcast closed");
                             break;
                         }
                     }
@@ -184,13 +188,15 @@ impl Bridge {
                 msg = read.next() => {
                     match msg {
                         Some(Ok(Message::Close(_))) | None => {
+                            debug!("Client disconnected");
                             break;
                         }
                         Some(Err(_)) => {
+                            debug!("Client error");
                             break;
                         }
                         _ => {
-                            // Ignore other messages from client
+                            debug!("Client sent unexpected message");
                         }
                     }
                 }

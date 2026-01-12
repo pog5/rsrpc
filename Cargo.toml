@@ -7,7 +7,15 @@ license = "MIT"
 repository = "https://github.com/OpenAsar/arrpc"
 
 [dependencies]
-tokio = { version = "1", features = ["full", "sync", "time", "net", "io-util", "macros", "rt-multi-thread"] }
+tokio = { version = "1", features = [
+    "full",
+    "sync",
+    "time",
+    "net",
+    "io-util",
+    "macros",
+    "rt-multi-thread",
+] }
 tokio-tungstenite = "0.24"
 futures-util = "0.3"
 serde = { version = "1", features = ["derive"] }
@@ -26,7 +34,7 @@ sysinfo = "0.32"
 sysinfo = "0.32"
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = "0.8"
 tokio-test = "0.4"
 
 [[bench]]
