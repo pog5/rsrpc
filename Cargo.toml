@@ -3,7 +3,7 @@ name = "rsrpc"
 version = "0.1.0"
 edition = "2021"
 description = "High-performance Discord RPC server replacement with dual JSON/MessagePack protocol"
-license = "MIT"
+license = "GPL-3.0"
 repository = "https://github.com/pog5/rsrpc"
 
 [dependencies]
