@@ -8,10 +8,13 @@ on:
 permissions:
   contents: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   check:
     name: Check & Update
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
     steps:
@@ -66,8 +69,8 @@ jobs:
           - x86_64-unknown-linux-gnu
           - aarch64-unknown-linux-gnu
           - x86_64-pc-windows-gnu
-          - x86_64-apple-darwin
-          - aarch64-apple-darwin
+          # - x86_64-apple-darwin
+          # - aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v4
 
