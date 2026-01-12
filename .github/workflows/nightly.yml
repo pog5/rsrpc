@@ -9,8 +9,11 @@ permissions:
   contents: write
 
 jobs:
-  nightly:
+  check:
+    name: Check & Update
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,9 +32,6 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@nightly
-
-      - name: Install Cross
-        run: cargo install cross
 
       - name: Run Updater
         run: |
@@ -54,35 +54,78 @@ jobs:
             echo "No database changes detected."
           fi
 
-      - name: Build Targets
-        if: steps.changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+  build:
+    name: Build ${{ matrix.target }}
+    needs: check
+    if: needs.check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - x86_64-pc-windows-gnu
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-nightly-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-nightly-
+
+      - name: Install Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target ${{ matrix.target }}
+
+      - name: Package
+        shell: bash
         run: |
-          mkdir dist
-          targets=(
-            "x86_64-unknown-linux-gnu"
-            "aarch64-unknown-linux-gnu"
-            "x86_64-pc-windows-gnu"
-            "aarch64-pc-windows-gnullvm"
-            "x86_64-apple-darwin"
-            "aarch64-apple-darwin"
-          )
-          
-          for target in "${targets[@]}"; do
-            echo "Building for $target..."
-            cross build --release --target $target
-            
-            # Determine extension
-            if [[ "$target" == *"windows"* ]]; then
-              ext=".exe"
-            else
-              ext=""
-            fi
-            
-            cp "target/$target/release/rsrpc$ext" "dist/rsrpc-$target$ext"
-          done
+          mkdir -p dist
+          if [[ "${{ matrix.target }}" == *"windows"* ]]; then
+            ext=".exe"
+          else
+            ext=""
+          fi
+          cp "target/${{ matrix.target }}/release/rsrpc$ext" "dist/rsrpc-${{ matrix.target }}$ext"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rsrpc-${{ matrix.target }}
+          path: dist/*
+          retention-days: 1
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
 
       - name: Update Nightly Release
-        if: steps.changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           name: Nightly Build
