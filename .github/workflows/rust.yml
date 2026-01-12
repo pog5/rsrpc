@@ -1,0 +1,43 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build and Test - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust Toolchain (nightly)
+      uses: dtolnay/rust-toolchain@nightly
+      with:
+        components: clippy
+
+    - name: Rust Cache
+      uses: swatinem/rust-cache@v2
+
+    - name: Build
+      run: cargo build --verbose
+
+    - name: Lint (Clippy)
+      run: cargo clippy --verbose
+      continue-on-error: true
+
+    - name: Run tests
+      run: cargo test --verbose
+
+    - name: Run benchmarks
+      run: cargo bench --verbose
