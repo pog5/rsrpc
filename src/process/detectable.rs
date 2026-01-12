@@ -12,7 +12,7 @@ const DEFAULT_DB_URL: &str =
     "https://raw.githubusercontent.com/OpenAsar/arrpc/main/src/process/detectable.json";
 const CACHE_FILE: &str = "detectable_cache.json";
 
-/// Load detectable games database
+/// Load detectable games database      
 pub async fn load_database(
     url: &str,
 ) -> Result<Vec<DetectableGame>, Box<dyn std::error::Error + Send + Sync>> {
