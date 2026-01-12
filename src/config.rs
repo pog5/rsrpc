@@ -38,7 +38,7 @@ pub struct Config {
     #[arg(
         long,
         env = "RSRPC_DB_URL",
-        default_value = "https://raw.githubusercontent.com/OpenAsar/arrpc/main/src/process/detectable.json"
+        default_value = "https://discord.com/api/v9/applications/detectable"
     )]
     pub db_url: String,
 
@@ -63,9 +63,7 @@ impl Default for Config {
             no_process_scanning: false, // Default is scanning enabled (so "no" is false)
             scan_interval_ms: 5000,
             debug: false,
-            db_url:
-                "https://raw.githubusercontent.com/OpenAsar/arrpc/main/src/process/detectable.json"
-                    .to_string(),
+            db_url: "https://discord.com/api/v9/applications/detectable".to_string(),
             enable_db_update: false,
         }
     }

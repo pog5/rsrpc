@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "High-performance Discord RPC server replacement with dual JSON/MessagePack protocol"
 license = "MIT"
-repository = "https://github.com/OpenAsar/arrpc"
+repository = "https://github.com/pog5/rsrpc"
 
 [dependencies]
 tokio = { version = "1", features = [

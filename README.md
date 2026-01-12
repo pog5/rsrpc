@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-GPLv3-blue.svg)
 ![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)
-![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg)
+![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg)
 ![Status](https://img.shields.io/badge/status-stable-green.svg)
 
 **rsrpc** is a high-performance, drop-in replacement for [arRPC](https://github.com/OpenAsar/arrpc) written in Rust. It provides a Discord Rich Presence server with significantly lower resource usage, faster process detection, and dual protocol support.
