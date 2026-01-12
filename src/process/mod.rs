@@ -13,7 +13,7 @@ mod unix;
 use crate::types::{DetectableGame, Executable, Pid, ProcessCache, ProcessInfo};
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
-use tracing::{debug, info};
+use tracing::info;
 
 /// Process scanner for game detection
 pub struct ProcessScanner {

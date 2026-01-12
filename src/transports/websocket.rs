@@ -3,7 +3,7 @@
 //! Listens on ports 6463-6472 for Discord RPC connections.
 
 use super::{Transport, TransportCommand, TransportEvent};
-use crate::types::{Handshake, RpcCommand, RpcResponse, SocketId};
+use crate::types::{RpcCommand, SocketId};
 use futures_util::{SinkExt, StreamExt};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -30,6 +30,7 @@ pub struct WebSocketTransport {
 }
 
 struct WsClient {
+    #[allow(dead_code)] // used in recieving end
     client_id: String,
     tx: mpsc::Sender<Message>,
 }

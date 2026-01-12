@@ -2,8 +2,7 @@
 //!
 //! Much faster than arRPC's `wmic` approach - direct API calls.
 
-use crate::types::{Pid, ProcessInfo};
-use std::path::PathBuf;
+use crate::types::ProcessInfo;
 use sysinfo::{ProcessesToUpdate, System};
 
 /// Get all running processes with their paths

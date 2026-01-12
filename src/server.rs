@@ -4,7 +4,7 @@
 
 use crate::bridge::Bridge;
 use crate::config::Config;
-use crate::process::{DetectedGame, ProcessScanner};
+use crate::process::ProcessScanner;
 use crate::transports::ipc::IpcTransport;
 use crate::transports::websocket::WebSocketTransport;
 use crate::transports::{Transport, TransportCommand, TransportEvent};
@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 /// Main RPC server
 pub struct RpcServer {

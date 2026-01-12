@@ -27,8 +27,8 @@ pub struct IpcTransport {
 }
 
 struct IpcClient {
+    #[allow(dead_code)] // used in recieving end
     client_id: String,
-    #[allow(dead_code)]
     tx: mpsc::Sender<Vec<u8>>,
 }
 
@@ -238,7 +238,7 @@ async fn handle_ipc_client(
     transport: Arc<IpcTransport>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut handshook = false;
-    let mut client_id = String::new();
+    let mut ipc_client_id;
 
     loop {
         tokio::select! {
@@ -257,19 +257,19 @@ async fn handle_ipc_client(
                                     send_close(&mut pipe, CloseCode::Unsupported, "Invalid version").await?;
                                     break;
                                 }
-                                client_id = handshake.client_id.clone();
+                                ipc_client_id = handshake.client_id.clone();
                                 handshook = true;
 
                                 // Store client
                                 transport.clients.write().await.insert(socket_id, IpcClient {
-                                    client_id: client_id.clone(),
+                                    client_id: ipc_client_id.clone(),
                                     tx: tx.clone(),
                                 });
 
                                 // Notify server
                                 event_tx.send(TransportEvent::Connected {
                                     socket_id,
-                                    client_id: client_id.clone(),
+                                    client_id: ipc_client_id.clone(),
                                 }).await?;
                             }
                             IpcOpcode::Frame => {
