@@ -1,11 +1,11 @@
 //! Integration tests for rsrpc
 
 #[tokio::test]
-async fn test_config_from_env() {
-    let config = rsrpc::Config::from_env();
+async fn test_config_defaults() {
+    let config = rsrpc::Config::default();
     assert_eq!(config.bridge_port, 1337);
     assert_eq!(config.msgpack_port, 1338);
-    assert!(config.process_scanning);
+    assert!(!config.no_process_scanning);
 }
 
 #[tokio::test]

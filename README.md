@@ -22,11 +22,11 @@
 
 ### Installation
 **Binaries**: 
-Grab the latest nightly binary from the [Releases](https://github.com/yourusername/rsrpc/releases) page. We provide builds for Windows (x64, arm64) and Linux (x64, arm64).
+Grab the latest nightly binary from the [Releases](https://github.com/pog5/rsrpc/releases) page. We provide builds for Windows (x64, arm64) and Linux (x64, arm64).
 
 **From Source**:
 ```bash
-git clone https://github.com/yourusername/rsrpc.git
+git clone https://github.com/pog5/rsrpc.git
 cd rsrpc
 cargo build --release
 ```
