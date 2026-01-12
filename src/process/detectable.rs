@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use tokio::fs;
 use tracing::{debug, info, warn};
 
+#[allow(dead_code)] // used
 const DEFAULT_DB_URL: &str =
     "https://raw.githubusercontent.com/OpenAsar/arrpc/main/src/process/detectable.json";
 const CACHE_FILE: &str = "detectable_cache.json";
