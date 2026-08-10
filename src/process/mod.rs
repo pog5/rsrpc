@@ -108,7 +108,7 @@ impl ProcessScanner {
 
             // Match against database
             for game in database.iter() {
-                if let Some(_) = match_executables(&game.executables, &to_compare, &process.args) {
+                if match_executables(&game.executables, &to_compare, &process.args).is_some() {
                     current_ids.push(game.id.to_string());
 
                     // Get or create timestamp
@@ -209,7 +209,8 @@ fn match_executables(
         }
 
         #[cfg(target_os = "linux")]
-        if exe.os.as_deref() != Some("linux") && exe.os.is_some() {
+        if !matches!(exe.os.as_deref(), None | Some("linux") | Some("win32")) {
+            // Preserve Windows detectables for Proton compatibility
             continue;
         }
 
@@ -266,4 +267,51 @@ async fn get_processes() -> Vec<ProcessInfo> {
 #[cfg(not(any(windows, unix)))]
 async fn get_processes() -> Vec<ProcessInfo> {
     Vec::new()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::borrow::Cow;
+
+    fn zzz_exe() -> Vec<Executable> {
+        vec![Executable {
+            name: Cow::Borrowed("zenlesszonezero game/zenlesszonezero.exe"),
+            is_launcher: false,
+            os: Some(Cow::Borrowed("win32")),
+            arguments: None,
+        }]
+    }
+
+    fn variants_for(raw: &str) -> Vec<String> {
+        generate_path_variants(&raw.to_lowercase().replace('\\', "/"))
+    }
+
+    #[test]
+    fn proton_windows_path_argv0() {
+        // Should match argv[0] from Wine
+        let v = variants_for(r"Z:\home\me\Games\ZenlessZoneZero Game\ZenlessZoneZero.exe");
+        assert!(match_executables(&zzz_exe(), &v, &None).is_some());
+    }
+
+    #[test]
+    fn unix_style_path_argv0() {
+        let v = variants_for("/home/me/Games/ZenlessZoneZero Game/ZenlessZoneZero.exe");
+        assert!(match_executables(&zzz_exe(), &v, &None).is_some());
+    }
+
+    #[test]
+    fn preloader_does_not_match() {
+        let v = variants_for(
+            "/home/user/.steam/steam/compatibilitytools.d/proton/files/bin/wine64-preloader",
+        );
+        assert!(match_executables(&zzz_exe(), &v, &None).is_none());
+    }
+
+    #[test]
+    fn bare_exe_name_without_dir_does_not_match() {
+        // Entry requires the parent dir segment; bare name must not match
+        let v = variants_for("zenlesszonezero.exe");
+        assert!(match_executables(&zzz_exe(), &v, &None).is_none());
+    }
 }
