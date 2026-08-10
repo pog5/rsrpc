@@ -325,7 +325,6 @@ async fn handle_ipc_client_unix(
     transport: Arc<IpcTransport>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut handshook = false;
-    let mut client_id = String::new();
 
     loop {
         tokio::select! {
@@ -343,7 +342,7 @@ async fn handle_ipc_client_unix(
                                     send_close_unix(&mut stream, CloseCode::Unsupported, "Invalid version").await?;
                                     break;
                                 }
-                                client_id = handshake.client_id.clone();
+                                let client_id = handshake.client_id;
                                 handshook = true;
 
                                 transport.clients.write().await.insert(socket_id, IpcClient {

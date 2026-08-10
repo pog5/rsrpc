@@ -1,6 +1,6 @@
 //! Unix-specific process enumeration using sysinfo
 
-use crate::types::{Pid, ProcessInfo};
+use crate::types::ProcessInfo;
 use std::path::PathBuf;
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind};
 

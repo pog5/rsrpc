@@ -108,7 +108,7 @@ impl ProcessScanner {
 
             // Match against database
             for game in database.iter() {
-                if let Some(_) = match_executables(&game.executables, &to_compare, &process.args) {
+                if match_executables(&game.executables, &to_compare, &process.args).is_some() {
                     current_ids.push(game.id.to_string());
 
                     // Get or create timestamp
